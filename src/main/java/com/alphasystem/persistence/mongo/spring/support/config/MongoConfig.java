@@ -3,14 +3,13 @@
  */
 package com.alphasystem.persistence.mongo.spring.support.config;
 
-import static java.lang.System.getProperty;
-
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 
-import com.mongodb.Mongo;
-import com.mongodb.MongoClient;
+import static java.lang.System.getProperty;
 
 /**
  * @author sali
@@ -24,6 +23,7 @@ public class MongoConfig extends AbstractMongoConfiguration {
 
 	@Override
 	protected String getDatabaseName() {
+		System.out.println(">>>>>>>>>>>>>>>>>>>>>> " + getProperty(MONGO_DB_NAME_PROPERTY));
 		return getProperty(MONGO_DB_NAME_PROPERTY, "__DEFAULT__");
 	}
 
