@@ -54,7 +54,11 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
                         Collection collection = (Collection) fieldValue;
                         for (Object o : collection) {
                             if (isGivenType(AbstractDocument.class, o)) {
-                                mongoTemplate.save(o);
+                                try {
+                                    mongoTemplate.save(o);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     } else {
@@ -62,7 +66,11 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
                         if (!callback.isIdFound()) {
                             throw new MappingException("Cannot perform cascade save on child object without id set");
                         }
-                        mongoTemplate.save(fieldValue);
+                        try {
+                            mongoTemplate.save(fieldValue);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
 
                 }
