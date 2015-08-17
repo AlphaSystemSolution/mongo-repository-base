@@ -9,6 +9,7 @@ import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
+import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
@@ -16,6 +17,7 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 
 import static com.alphasystem.util.AppUtil.isGivenType;
+import static java.lang.String.format;
 import static org.springframework.util.ReflectionUtils.doWithFields;
 import static org.springframework.util.ReflectionUtils.makeAccessible;
 
@@ -36,46 +38,56 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
         this.mongoTemplate = mongoTemplate;
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     public void onBeforeConvert(final Object source) {
-        doWithFields(source.getClass(), new ReflectionUtils.FieldCallback() {
+        doWithFields(source.getClass(), field -> {
+            makeAccessible(field);
 
-            public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
-                makeAccessible(field);
+            if (field.isAnnotationPresent(DBRef.class) && field.isAnnotationPresent(CascadeSave.class)) {
+                final Object fieldValue = field.get(source);
 
-                if (field.isAnnotationPresent(DBRef.class) && field.isAnnotationPresent(CascadeSave.class)) {
-                    final Object fieldValue = field.get(source);
+                DbRefFieldCallback callback = new DbRefFieldCallback();
 
-                    DbRefFieldCallback callback = new DbRefFieldCallback();
+                Class<?> fieldClass = fieldValue.getClass();
 
-                    Class<?> fieldClass = fieldValue.getClass();
-
-                    if (Collection.class.isAssignableFrom(fieldClass)) {
-                        Collection collection = (Collection) fieldValue;
-                        for (Object o : collection) {
-                            if (isGivenType(AbstractDocument.class, o)) {
-                                try {
-                                    mongoTemplate.save(o);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    } else {
-                        doWithFields(fieldClass, callback);
-                        if (!callback.isIdFound()) {
-                            throw new MappingException("Cannot perform cascade save on child object without id set");
-                        }
-                        try {
-                            mongoTemplate.save(fieldValue);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                if (Collection.class.isAssignableFrom(fieldClass)) {
+                    Collection collection = (Collection) fieldValue;
+                    collection.stream().filter(o -> isGivenType(AbstractDocument.class, o)).forEach(o -> {
+                        save((AbstractDocument) o);
+                    });
+                } else {
+                    doWithFields(fieldClass, callback);
+                    if (!callback.isIdFound()) {
+                        throw new MappingException("Cannot perform cascade save on child object without id set");
                     }
-
+                    try {
+                        mongoTemplate.save(fieldValue);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
+
             }
         });
+    }
+
+    /**
+     * if the entity exists then use existing entity to avoid unique constraint.
+     * @param src
+     */
+    private void save(AbstractDocument src){
+        AbstractDocument doc = src;
+        BasicQuery query = new BasicQuery(format("{'displayName': '%s'}", src.getDisplayName()));
+        AbstractDocument entity = mongoTemplate.findOne(query, doc.getClass());
+        if(entity != null){
+            doc = entity;
+        }
+        try {
+            mongoTemplate.save(doc);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static class DbRefFieldCallback implements ReflectionUtils.FieldCallback {
