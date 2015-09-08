@@ -74,17 +74,20 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
 
     /**
      * if the entity exists then use existing entity to avoid unique constraint.
+     *
      * @param src
      */
-    private void save(AbstractDocument src){
-        AbstractDocument doc = src;
-        BasicQuery query = new BasicQuery(format("{'displayName': '%s'}", src.getDisplayName()));
-        AbstractDocument entity = mongoTemplate.findOne(query, doc.getClass());
-        if(entity != null){
-            doc = entity;
+    private void save(AbstractDocument src) {
+        String displayName = src.getDisplayName();
+        String id = src.getId();
+        BasicQuery query = new BasicQuery(format("{'displayName': '%s'}", displayName));
+        AbstractDocument entity = mongoTemplate.findOne(query, src.getClass());
+        if (entity != null && !entity.getId().equals(id)) {
+            throw new RuntimeException(format("Possible duplicate Target ID: %s, Database ID: %s, Display Name: %s",
+                    id, entity.getId(), displayName));
         }
         try {
-            mongoTemplate.save(doc);
+            mongoTemplate.save(src);
         } catch (Exception e) {
             e.printStackTrace();
         }
