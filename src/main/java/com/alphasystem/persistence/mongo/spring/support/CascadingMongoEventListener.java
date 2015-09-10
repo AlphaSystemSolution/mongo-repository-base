@@ -9,6 +9,7 @@ import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
+import org.springframework.data.mongodb.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
@@ -40,7 +41,8 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public void onBeforeConvert(final Object source) {
+    public void onBeforeConvert(BeforeConvertEvent event) {
+        final Object source = event.getSource();
         doWithFields(source.getClass(), field -> {
             makeAccessible(field);
 
