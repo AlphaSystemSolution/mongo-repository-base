@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
 import org.springframework.data.mongodb.core.mapping.event.BeforeConvertEvent;
-import org.springframework.data.mongodb.core.query.BasicQuery;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
@@ -19,6 +19,7 @@ import java.util.Collection;
 
 import static com.alphasystem.util.AppUtil.isGivenType;
 import static java.lang.String.format;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.util.ReflectionUtils.doWithFields;
 import static org.springframework.util.ReflectionUtils.makeAccessible;
 
@@ -82,11 +83,13 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
     private void save(AbstractDocument src) {
         String displayName = src.getDisplayName();
         String id = src.getId();
-        BasicQuery query = new BasicQuery(format("{'displayName': '%s'}", displayName));
+        Query query = new Query(where("displayName").is(displayName));
         AbstractDocument entity = mongoTemplate.findOne(query, src.getClass());
         if (entity != null && !entity.getId().equals(id)) {
-            throw new RuntimeException(format("Possible duplicate Target ID: %s, Database ID: %s, Display Name: %s",
-                    id, entity.getId(), displayName));
+            String message = format("Possible duplicate Target ID: %s, Database ID: %s, Display Name: %s for {%s}",
+                    id, entity.getId(), displayName, src.getClass().getSimpleName());
+            System.err.println(message);
+            throw new RuntimeException(message);
         }
         try {
             mongoTemplate.save(src);
