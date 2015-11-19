@@ -3,7 +3,6 @@ package com.alphasystem.persistence.mongo.spring.support;
 import com.alphasystem.persistence.mongo.model.AbstractDocument;
 import com.alphasystem.persistence.mongo.model.CascadeSave;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -36,7 +35,7 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
     }
 
     @Autowired
-    public void setMongoTemplate(@Qualifier("wordByWordTemplate") MongoTemplate mongoTemplate) {
+    public void setMongoTemplate(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
