@@ -1,7 +1,7 @@
 package com.alphasystem.persistence.mongo.spring.support;
 
-import com.alphasystem.persistence.mongo.model.AbstractDocument;
-import com.alphasystem.persistence.mongo.model.CascadeSave;
+import com.alphasystem.persistence.model.AbstractDocument;
+import com.alphasystem.persistence.model.CascadeSave;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.model.MappingException;

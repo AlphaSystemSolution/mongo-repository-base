@@ -3,7 +3,7 @@
  */
 package com.alphasystem.persistence.mongo.repository;
 
-import com.alphasystem.persistence.mongo.model.AbstractDocument;
+import com.alphasystem.persistence.model.AbstractDocument;
 import org.springframework.data.mongodb.core.mapping.event.*;
 
 /**

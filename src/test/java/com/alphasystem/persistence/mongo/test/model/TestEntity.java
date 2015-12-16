@@ -3,9 +3,9 @@
  */
 package com.alphasystem.persistence.mongo.test.model;
 
-import static java.lang.String.format;
+import com.alphasystem.persistence.model.AbstractDocument;
 
-import com.alphasystem.persistence.mongo.model.AbstractDocument;
+import static java.lang.String.format;
 
 /**
  * @author sali
@@ -23,12 +23,12 @@ public class TestEntity extends AbstractDocument {
 		return type;
 	}
 
-	public String getValue() {
-		return value;
-	}
-
 	public void setType(Type type) {
 		this.type = type;
+	}
+
+	public String getValue() {
+		return value;
 	}
 
 	public void setValue(String value) {

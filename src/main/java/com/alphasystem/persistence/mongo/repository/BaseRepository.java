@@ -3,10 +3,9 @@
  */
 package com.alphasystem.persistence.mongo.repository;
 
+import com.alphasystem.persistence.model.AbstractDocument;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.PagingAndSortingRepository;
-
-import com.alphasystem.persistence.mongo.model.AbstractDocument;
 
 
 /**
