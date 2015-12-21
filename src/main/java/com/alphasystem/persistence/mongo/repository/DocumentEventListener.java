@@ -4,6 +4,8 @@
 package com.alphasystem.persistence.mongo.repository;
 
 import com.alphasystem.persistence.model.AbstractDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.mapping.event.*;
 
 /**
@@ -13,6 +15,7 @@ import org.springframework.data.mongodb.core.mapping.event.*;
 public abstract class DocumentEventListener<T extends AbstractDocument> extends
 		AbstractMongoEventListener<T> {
 
+    protected Logger logger = LoggerFactory.getLogger(getClass());
 
     @Override
     public void onAfterConvert(AfterConvertEvent<T> event) {
