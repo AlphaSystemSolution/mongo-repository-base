@@ -1,7 +1,10 @@
 package com.alphasystem.persistence.mongo.spring.support;
 
 import com.alphasystem.persistence.model.AbstractDocument;
+import com.alphasystem.persistence.model.AbstractSimpleDocument;
 import com.alphasystem.persistence.model.CascadeSave;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.model.MappingException;
@@ -17,7 +20,6 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 
 import static com.alphasystem.util.AppUtil.isGivenType;
-import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.util.ReflectionUtils.doWithFields;
 import static org.springframework.util.ReflectionUtils.makeAccessible;
@@ -28,22 +30,17 @@ import static org.springframework.util.ReflectionUtils.makeAccessible;
 @Component
 public class CascadingMongoEventListener extends AbstractMongoEventListener {
 
-    private MongoTemplate mongoTemplate;
-
-    public MongoTemplate getMongoTemplate() {
-        return mongoTemplate;
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(CascadingMongoEventListener.class);
 
     @Autowired
-    public void setMongoTemplate(MongoTemplate mongoTemplate) {
-        this.mongoTemplate = mongoTemplate;
-    }
+    private MongoTemplate mongoTemplate;
 
     @SuppressWarnings({"unchecked"})
     @Override
     public void onBeforeConvert(BeforeConvertEvent event) {
         final Object source = event.getSource();
         doWithFields(source.getClass(), field -> {
+            LOGGER.debug("Start saving field \"{}\"", field.getName());
             makeAccessible(field);
 
             if (field.isAnnotationPresent(DBRef.class) && field.isAnnotationPresent(CascadeSave.class)) {
@@ -51,13 +48,16 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
 
                 DbRefFieldCallback callback = new DbRefFieldCallback();
 
+                LOGGER.debug("Current field value \"{}\"", fieldValue);
+                if (fieldValue == null) {
+                    LOGGER.warn("Skipping field \"{}\" because of null value", field.getName());
+                    return;
+                }
                 Class<?> fieldClass = fieldValue.getClass();
 
                 if (Collection.class.isAssignableFrom(fieldClass)) {
                     Collection collection = (Collection) fieldValue;
-                    collection.stream().filter(o -> isGivenType(AbstractDocument.class, o)).forEach(o -> {
-                        save((AbstractDocument) o);
-                    });
+                    collection.stream().filter(o -> isGivenType(AbstractSimpleDocument.class, o)).forEach(o -> save((AbstractSimpleDocument) o));
                 } else {
                     doWithFields(fieldClass, callback);
                     if (!callback.isIdFound()) {
@@ -66,7 +66,8 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
                     try {
                         mongoTemplate.save(fieldValue);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOGGER.error("Error occurred while saving field \"{}\" with value \"{}\"", field.getName(),
+                                fieldValue, e);
                     }
                 }
 
@@ -74,26 +75,30 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
         });
     }
 
+
     /**
-     * if the entity exists then use existing entity to avoid unique constraint.
+     * Called to save a document for the collection field.
      *
-     * @param src
+     * @param src Document to save
      */
-    private void save(AbstractDocument src) {
-        String displayName = src.getDisplayName();
+    private void save(AbstractSimpleDocument src) {
         String id = src.getId();
-        Query query = new Query(where("displayName").is(displayName));
-        AbstractDocument entity = mongoTemplate.findOne(query, src.getClass());
-        if (entity != null && !entity.getId().equals(id)) {
-            String message = format("Possible duplicate Target ID: %s, Database ID: %s, Display Name: %s for {%s}",
-                    id, entity.getId(), displayName, src.getClass().getSimpleName());
-            System.err.println(message);
-            throw new RuntimeException(message);
+        if (isGivenType(AbstractDocument.class, src)) {
+            AbstractDocument ad = (AbstractDocument) src;
+            String displayName = ad.getDisplayName();
+            Query query = new Query(where("displayName").is(displayName));
+            AbstractDocument entity = mongoTemplate.findOne(query, ad.getClass());
+            if (entity != null && !entity.getId().equals(id)) {
+                LOGGER.error("Possible duplicate Target ID: {}, Database ID: {}, Display Name: {} for \"{}\"",
+                        id, entity.getId(), displayName, src.getClass().getSimpleName());
+                return;
+            }
         }
         try {
             mongoTemplate.save(src);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Error occurred while saving document of type \"{}\" with id \"{}\"",
+                    src.getClass().getSimpleName(), src.getId(), e);
         }
     }
 
