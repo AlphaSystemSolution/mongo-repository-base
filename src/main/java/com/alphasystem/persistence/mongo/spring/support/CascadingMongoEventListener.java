@@ -66,8 +66,8 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
                     try {
                         mongoTemplate.save(fieldValue);
                     } catch (Exception e) {
-                        LOGGER.error("Error occurred while saving field \"{}\" with value \"{}\"", field.getName(),
-                                fieldValue, e);
+                        LOGGER.error("Error occurred while saving field \"{}\" with value \"{}\", error message is \"{}\"",
+                                field.getName(), fieldValue, e.getMessage());
                     }
                 }
 
