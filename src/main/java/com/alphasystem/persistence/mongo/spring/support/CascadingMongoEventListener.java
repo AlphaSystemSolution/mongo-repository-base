@@ -57,48 +57,41 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
 
                 if (Collection.class.isAssignableFrom(fieldClass)) {
                     Collection collection = (Collection) fieldValue;
-                    collection.stream().filter(o -> isGivenType(AbstractSimpleDocument.class, o)).forEach(o -> save((AbstractSimpleDocument) o));
+                    collection.stream().filter(o -> isGivenType(AbstractSimpleDocument.class, o)).forEach(o ->
+                            save(field, (AbstractSimpleDocument) o));
                 } else {
                     doWithFields(fieldClass, callback);
                     if (!callback.isIdFound()) {
                         throw new MappingException("Cannot perform cascade save on child object without id set");
                     }
-                    try {
-                        mongoTemplate.save(fieldValue);
-                    } catch (Exception e) {
-                        LOGGER.error("Error occurred while saving field \"{}\" with value \"{}\", error message is \"{}\"",
-                                field.getName(), fieldValue, e.getMessage());
-                    }
+                    save(field, fieldValue);
                 }
 
             }
         });
     }
 
-
-    /**
-     * Called to save a document for the collection field.
-     *
-     * @param src Document to save
-     */
-    private void save(AbstractSimpleDocument src) {
-        String id = src.getId();
-        if (isGivenType(AbstractDocument.class, src)) {
-            AbstractDocument ad = (AbstractDocument) src;
+    private void save(Field field, Object fieldValue) {
+        String id = "none";
+        if (isGivenType(AbstractSimpleDocument.class, fieldValue)) {
+            id = ((AbstractSimpleDocument) fieldValue).getId();
+        }
+        if (isGivenType(AbstractDocument.class, fieldValue)) {
+            AbstractDocument ad = (AbstractDocument) fieldValue;
             String displayName = ad.getDisplayName();
             Query query = new Query(where("displayName").is(displayName));
             AbstractDocument entity = mongoTemplate.findOne(query, ad.getClass());
             if (entity != null && !entity.getId().equals(id)) {
                 LOGGER.error("Possible duplicate Target ID: {}, Database ID: {}, Display Name: {} for \"{}\"",
-                        id, entity.getId(), displayName, src.getClass().getSimpleName());
+                        id, entity.getId(), displayName, fieldValue.getClass().getSimpleName());
                 return;
             }
         }
         try {
-            mongoTemplate.save(src);
+            mongoTemplate.save(fieldValue);
         } catch (Exception e) {
-            LOGGER.error("Error occurred while saving document of type \"{}\" with id \"{}\"",
-                    src.getClass().getSimpleName(), src.getId(), e);
+            LOGGER.error("Error occurred while saving field \"{}\" with value \"{}\" and id \"{}\", error message is \"{}\"",
+                    field.getName(), fieldValue, id, e.getMessage());
         }
     }
 
