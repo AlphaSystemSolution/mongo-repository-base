@@ -19,7 +19,7 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.Collection;
 
-import static com.alphasystem.util.AppUtil.isGivenType;
+import static com.alphasystem.util.AppUtil.isInstanceOf;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.util.ReflectionUtils.doWithFields;
 import static org.springframework.util.ReflectionUtils.makeAccessible;
@@ -50,14 +50,14 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
 
                 LOGGER.debug("Current field value \"{}\"", fieldValue);
                 if (fieldValue == null) {
-                    LOGGER.warn("Skipping field \"{}\" because of null value", field.getName());
+                    LOGGER.debug("Skipping field \"{}\" because of null value", field.getName());
                     return;
                 }
                 Class<?> fieldClass = fieldValue.getClass();
 
                 if (Collection.class.isAssignableFrom(fieldClass)) {
                     Collection collection = (Collection) fieldValue;
-                    collection.stream().filter(o -> isGivenType(AbstractSimpleDocument.class, o)).forEach(o ->
+                    collection.stream().filter(o -> isInstanceOf(AbstractSimpleDocument.class, o)).forEach(o ->
                             save(field, (AbstractSimpleDocument) o));
                 } else {
                     doWithFields(fieldClass, callback);
@@ -73,10 +73,10 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
 
     private void save(Field field, Object fieldValue) {
         String id = "none";
-        if (isGivenType(AbstractSimpleDocument.class, fieldValue)) {
+        if (isInstanceOf(AbstractSimpleDocument.class, fieldValue)) {
             id = ((AbstractSimpleDocument) fieldValue).getId();
         }
-        if (isGivenType(AbstractDocument.class, fieldValue)) {
+        if (isInstanceOf(AbstractDocument.class, fieldValue)) {
             AbstractDocument ad = (AbstractDocument) fieldValue;
             String displayName = ad.getDisplayName();
             Query query = new Query(where("displayName").is(displayName));
