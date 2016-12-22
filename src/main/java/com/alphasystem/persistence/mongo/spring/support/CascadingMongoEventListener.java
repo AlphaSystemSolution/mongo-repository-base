@@ -58,7 +58,7 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
                 if (Collection.class.isAssignableFrom(fieldClass)) {
                     Collection collection = (Collection) fieldValue;
                     collection.stream().filter(o -> isInstanceOf(AbstractSimpleDocument.class, o)).forEach(o ->
-                            save(field, (AbstractSimpleDocument) o));
+                            save(field, o));
                 } else {
                     doWithFields(fieldClass, callback);
                     if (!callback.isIdFound()) {
@@ -106,7 +106,7 @@ public class CascadingMongoEventListener extends AbstractMongoEventListener {
             }
         }
 
-        public boolean isIdFound() {
+        boolean isIdFound() {
             return idFound;
         }
     }
