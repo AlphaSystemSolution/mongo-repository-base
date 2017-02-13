@@ -3,16 +3,17 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alphasystem.mongo</groupId>
 	<artifactId>repository-base</artifactId>
+	<version>4.0.0-SNAPSHOT</version>
 	<parent>
 		<groupId>com.alphasystem.project</groupId>
 		<artifactId>jar</artifactId>
 		<version>3.0.0-SNAPSHOT</version>
-		<relativePath>../project/jar/pom.xml</relativePath>
+		<relativePath/>
 	</parent>
 	<dependencies>
 		<dependency>
 			<groupId>com.alphasystem.mongo</groupId>
-			<artifactId>model-base</artifactId>
+			<artifactId>entity-model-base</artifactId>
 			<version>${model-base.version}</version>
 		</dependency>
 		<dependency>
