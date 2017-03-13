@@ -3,18 +3,17 @@
  */
 package com.alphasystem.persistence.mongo.spring.support;
 
-import static com.alphasystem.persistence.mongo.spring.support.ApplicationContextProvider.getInstance;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.stereotype.Component;
+
+import static com.alphasystem.persistence.mongo.spring.support.ApplicationContextProvider.getInstance;
 
 /**
  * @author sali
  * 
  */
-@Component
+//@Component
 public class ApplicationContextAwareImpl implements ApplicationContextAware {
 
 	@Override
